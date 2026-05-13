@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Professor - Receber Frequência</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #e9ecef; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #reader { width: 100%; max-width: 450px; margin: auto; border-radius: 10px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; color: #495057; }
+        .btn-csv { background: #17a2b8; color: white; padding: 12px; border: none; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color:#007bff; margin-top:0;">📥 Receber do Líder</h2>
+        <div id="reader"></div>
+    </div>
+
+    <div class="card">
+        <h3>📚 Histórico de Aulas</h3>
+        <table id="tabelaHistorico">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Turma</th>
+                    <th>Qtd</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabela"></tbody>
+        </table>
+        <button class="btn-csv" onclick="exportarCSV()">Baixar Relatório Excel (CSV)</button>
+    </div>
+
+    <script>
+        let historico = JSON.parse(localStorage.getItem("hist_professor_final") || "[]");
+        const scanner = new Html5Qrcode("reader");
+
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 280 }, (txt) => {
+            if(txt.startsWith("RESUMO|")) {
+                const partes = txt.split("|");
+                const turma = partes[1];
+                const data = partes[2];
+                const alunos = partes[3];
+
+                // Verifica se já não salvou essa mesma aula (mesma turma e data)
+                if(!historico.some(h => h.turma === turma && h.data === data)) {
+                    historico.push({ turma, data, alunos });
+                    localStorage.setItem("hist_professor_final", JSON.stringify(historico));
+                    alert("Dados da turma " + turma + " recebidos com sucesso!");
+                    location.reload();
+                } else {
+                    alert("Atenção: Os dados desta turma para hoje já foram recebidos.");
+                }
+            }
+        });
+
+        function renderizar() {
+            const corpo = document.getElementById("corpoTabela");
+            historico.reverse().forEach(h => {
+                corpo.innerHTML += `<tr><td>${h.data}</td><td><b>${h.turma}</b></td><td>${h.alunos.split(";").length} alunos</td></tr>`;
+            });
+        }
+
+        function exportarCSV() {
+            if(historico.length === 0) return alert("Histórico vazio.");
+            let csv = "\uFEFFData,Turma,Alunos\n";
+            historico.forEach(h => {
+                csv += `${h.data},${h.turma},"${h.alunos.replace(/;/g, ", ")}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Frequencia_Geral_${new Date().toLocaleDateString()}.csv`;
+            link.click();
+        }
+
+        renderizar();
+    </script>
+</body>
+</html>

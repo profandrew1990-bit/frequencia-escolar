@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Alunos - Professor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #1a73e8; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #qrcode { margin-top: 25px; display: flex; flex-direction: column; align-items: center; padding: 10px; background: #fff; border: 1px dashed #ccc; }
+        .instrucao { font-size: 0.8rem; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📝 Cadastro de Aluno</h2>
+        <input type="text" id="turma" placeholder="Nome da Turma (Ex: 10A)">
+        <input type="text" id="aluno" placeholder="Nome Completo do Aluno">
+        <button onclick="gerarIdentidade()">Gerar QR Code</button>
+        
+        <div id="qrcode">
+            <div id="img-qr"></div>
+            <p id="legenda" style="font-weight: bold; margin-top: 10px;"></p>
+        </div>
+        <p class="instrucao">Tire print e envie ao aluno ou imprima.</p>
+    </div>
+
+    <script>
+        function gerarIdentidade() {
+            const turma = document.getElementById("turma").value.trim();
+            const aluno = document.getElementById("aluno").value.trim();
+            if(!turma || !aluno) return alert("Por favor, preencha a turma e o nome do aluno.");
+
+            // Estrutura de dados: ALUNO:Nome|TURMA:Turma
+            const dados = `ALUNO:${aluno}|TURMA:${turma}`;
+            
+            document.getElementById("img-qr").innerHTML = "";
+            new QRCode(document.getElementById("img-qr"), {
+                text: dados,
+                width: 200,
+                height: 200
+            });
+            document.getElementById("legenda").innerText = `${aluno} (${turma})`;
+        }
+    </script>
+</body>
+</html>

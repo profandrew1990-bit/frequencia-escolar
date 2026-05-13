@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner do Líder</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding: 15px; text-align: center; }
+        #reader { width: 100%; max-width: 450px; margin: auto; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .stats { background: #fff; padding: 15px; border-radius: 10px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-sync { background: #28a745; color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        #resumo-area { margin-top: 20px; display: flex; justify-content: center; background: white; padding: 15px; border-radius: 10px; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 8px; margin-top: 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <h3 style="margin:0;">Alunos Presentes: <span id="count" style="color:#28a745;">0</span></h3>
+    </div>
+    
+    <div id="reader"></div>
+    
+    <button class="btn-sync" onclick="gerarResumo()">🔄 GERAR RESUMO PARA PROFESSOR</button>
+    <div id="resumo-area"></div>
+
+    <button class="btn-danger" onclick="limparAula()">Limpar Aula Atual</button>
+
+    <script>
+        let listaPresenca = [];
+        const scanner = new Html5Qrcode("reader");
+
+        // Inicia a câmera
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+            if(txt.includes("ALUNO:")) {
+                const info = txt.split("|");
+                const nome = info[0].replace("ALUNO:", "");
+                const turma = info[1].replace("TURMA:", "");
+                
+                if(!listaPresenca.some(a => a.nome === nome)) {
+                    listaPresenca.push({ nome, turma, hora: new Date().toLocaleTimeString() });
+                    document.getElementById("count").innerText = listaPresenca.length;
+                    if(navigator.vibrate) navigator.vibrate(100); // Vibra ao ler
+                }
+            }
+        }).catch(err => alert("Erro ao acessar câmera: " + err));
+
+        function gerarResumo() {
+            if(listaPresenca.length === 0) return alert("Nenhum aluno registrado!");
+            const data = new Date().toLocaleDateString('pt-PT');
+            const turma = listaPresenca[0].turma;
+            
+            // Estrutura compacta: RESUMO|Turma|Data|Aluno1;Aluno2...
+            const dadosCompactos = `RESUMO|${turma}|${data}|` + listaPresenca.map(a => a.nome).join(";");
+            
+            document.getElementById("resumo-area").innerHTML = "";
+            new QRCode(document.getElementById("resumo-area"), { 
+                text: dadosCompactos, 
+                width: 300, 
+                height: 300,
+                correctLevel: QRCode.CorrectLevel.L 
+            });
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function limparAula() {
+            if(confirm("Deseja apagar os dados desta aula?")) {
+                listaPresenca = [];
+                document.getElementById("count").innerText = "0";
+                document.getElementById("resumo-area").innerHTML = "";
+            }
+        }
+    </script>
+</body>
+</html>
